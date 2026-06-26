@@ -77,7 +77,10 @@ jobs:
             --exclude-module PyQt5 `
             --exclude-module tkinter `
             gpsr_image_gui.pyw
-          Compress-Archive -Path "dist/${{ env.APP_NAME }}.exe" -DestinationPath "${{ matrix.package_name }}" -Force
+          New-Item -ItemType Directory -Path package -Force
+          Copy-Item "dist/${{ env.APP_NAME }}.exe" package/
+          Copy-Item "使用说明.html" package/
+          Compress-Archive -Path "package/*" -DestinationPath "${{ matrix.package_name }}" -Force
 
       - name: Build macOS app
         if: runner.os == 'macOS'
@@ -100,7 +103,10 @@ jobs:
             --exclude-module tkinter \
             gpsr_image_gui.pyw
           codesign --force --deep --sign - "dist/${APP_NAME}.app" || true
-          ditto -c -k --sequesterRsrc --keepParent "dist/${APP_NAME}.app" "${{ matrix.package_name }}"
+          mkdir -p package
+          cp -R "dist/${APP_NAME}.app" package/
+          cp "使用说明.html" package/
+          (cd package && ditto -c -k --sequesterRsrc --keepParent "${APP_NAME}.app" "../${{ matrix.package_name }}" && zip -q "../${{ matrix.package_name }}" "使用说明.html")
 
       - name: Upload package
         uses: actions/upload-artifact@v4

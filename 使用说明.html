@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GPSR 图片生成器使用说明</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --panel: #ffffff;
+      --ink: #172033;
+      --muted: #647084;
+      --line: #dbe3ee;
+      --blue: #0f65d8;
+      --green: #16845f;
+      --amber: #a16207;
+      --code: #111827;
+      --shadow: 0 18px 50px rgba(39, 56, 89, .12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        linear-gradient(135deg, rgba(15, 101, 216, .10), transparent 34%),
+        radial-gradient(circle at 86% 12%, rgba(22, 132, 95, .12), transparent 26%),
+        var(--bg);
+      color: var(--ink);
+      font-family: "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+      line-height: 1.65;
+    }
+
+    main {
+      width: min(1080px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 38px 0 56px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 24px;
+      align-items: end;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 46px);
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      margin: 12px 0 0;
+      max-width: 720px;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 6px 12px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: rgba(255, 255, 255, .78);
+      color: var(--blue);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    section {
+      margin-top: 24px;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .92);
+      box-shadow: var(--shadow);
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 22px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 22px 0 8px;
+      font-size: 16px;
+    }
+
+    p { margin: 8px 0; }
+
+    ol, ul {
+      margin: 10px 0 0;
+      padding-left: 24px;
+    }
+
+    li { margin: 8px 0; }
+
+    code {
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #eef3fb;
+      color: #0b4fb0;
+      font-family: "Cascadia Mono", Consolas, monospace;
+      font-size: .95em;
+    }
+
+    pre {
+      margin: 12px 0 0;
+      padding: 14px 16px;
+      overflow-x: auto;
+      border-radius: 8px;
+      background: var(--code);
+      color: #e5e7eb;
+      font-family: "Cascadia Mono", Consolas, monospace;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .note {
+      border-left: 4px solid var(--blue);
+      padding: 12px 14px;
+      border-radius: 6px;
+      background: #eef6ff;
+      color: #244263;
+    }
+
+    .ok { color: var(--green); font-weight: 700; }
+    .warn { color: var(--amber); font-weight: 700; }
+
+    table {
+      width: 100%;
+      margin-top: 12px;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    th, td {
+      padding: 11px 12px;
+      border: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #edf3fb;
+      color: #26384f;
+    }
+
+    @media (max-width: 760px) {
+      main { width: min(100% - 24px, 1080px); padding-top: 24px; }
+      header, .grid { grid-template-columns: 1fr; }
+      section { padding: 18px; }
+      .tag { width: fit-content; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>GPSR 图片生成器使用说明</h1>
+        <p class="lead">给业务员的快速操作指南：准备表格和店铺图片，选择表格，点击生成，程序会自动复制并重命名图片。</p>
+      </div>
+      <div class="tag">支持 .xlsx / .csv</div>
+    </header>
+
+    <section>
+      <h2>一、开始前准备</h2>
+      <ol>
+        <li>把表格文件和店铺图片放在同一个文件夹里。</li>
+        <li>店铺图片必须是 JPG/JPEG，并且文件名必须等于店铺名，例如：<code>店铺.jpg</code>。</li>
+        <li>打开 <code>GPSRImageGenerator.exe</code>，点击 <code>选择表格</code>。</li>
+        <li>选择准备好的 <code>.xlsx</code> 或 <code>.csv</code> 文件，再点击 <code>生成图片</code>。</li>
+        <li>生成完成后，点击 <code>打开生成位置</code> 查看结果。</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>二、表格格式</h2>
+      <div class="grid">
+        <div>
+          <h3>Excel 文件</h3>
+          <p>Excel 文件名可以随便起，但每个 sheet 名必须是：</p>
+          <pre>店铺-站点</pre>
+          <p>sheet 第一列填写 ASIN，每行一个：</p>
+          <pre>ASIN：B012345678
+ASIN：B012345678
+ASIN：B012345678</pre>
+        </div>
+        <div>
+          <h3>CSV 文件</h3>
+          <p>CSV 文件名可以随便起。第一行填写：</p>
+          <pre>店铺-站点</pre>
+          <p>第二行开始填写 ASIN，每行一个：</p>
+          <pre>ASIN：B012345678
+ASIN：B012345678
+ASIN：B012345678</pre>
+        </div>
+      </div>
+      <p class="note">程序会检查格式。格式不符合时，会在程序根目录生成 <code>GPSR表格模板.xlsx</code>，可以直接按模板修改。</p>
+    </section>
+
+    <section>
+      <h2>三、文件摆放示例</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>文件</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>任意文件名.xlsx</code></td>
+            <td>表格文件，sheet 名必须是 <code>店铺-站点</code>。</td>
+          </tr>
+          <tr>
+            <td><code>店铺.jpg</code></td>
+            <td>源图片，文件名必须和表格里的店铺名一致。</td>
+          </tr>
+          <tr>
+            <td><code>店铺-站点/</code></td>
+            <td>程序自动生成的输出文件夹。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>四、常见提示</h2>
+      <ul>
+        <li><span class="warn">表格格式不符合要求：</span>检查 sheet 名或 CSV 第一行是否为 <code>店铺-站点</code>，检查 ASIN 是否为 10 位字母/数字。</li>
+        <li><span class="warn">缺少店铺图片：</span>把 <code>店铺.jpg</code> 放到表格同级目录，或者按程序提示手动选择图片。</li>
+        <li><span class="ok">生成成功：</span>图片会输出到表格同级目录下的 <code>店铺-站点</code> 文件夹。</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>
