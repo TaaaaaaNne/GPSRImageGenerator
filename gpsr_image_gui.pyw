@@ -29,6 +29,7 @@ except ImportError as exc:
 
 from gpsr_image_renamer import (
     ProcessResult,
+    create_template,
     get_required_shops,
     is_valid_jpeg,
     process_excel,
@@ -36,7 +37,7 @@ from gpsr_image_renamer import (
 
 
 APP_TITLE = "GPSR 图片生成器"
-DEFAULT_DATA_FOLDER = "GPSR图片生成器"
+SUPPORTED_TABLE_SUFFIXES = {".xlsx", ".csv"}
 
 
 def application_dir() -> Path:
@@ -50,13 +51,13 @@ def application_dir() -> Path:
     return Path(__file__).resolve().parent
 
 
-class ExcelPathEdit(QLineEdit):
+class TablePathEdit(QLineEdit):
     file_dropped = pyqtSignal(str)
 
     def __init__(self) -> None:
         super().__init__()
         self.setAcceptDrops(True)
-        self.setPlaceholderText("选择或拖入 ASIN.xlsx 文件")
+        self.setPlaceholderText("选择或拖入 .xlsx / .csv 表格文件")
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         if self._first_local_path(event) is not None:
@@ -71,10 +72,7 @@ class ExcelPathEdit(QLineEdit):
             return
 
         event.acceptProposedAction()
-        dropped = Path(path)
-        if dropped.is_dir():
-            dropped = dropped / "ASIN.xlsx"
-        self.file_dropped.emit(str(dropped))
+        self.file_dropped.emit(path)
 
     @staticmethod
     def _first_local_path(event) -> str | None:
@@ -91,12 +89,12 @@ class ProcessWorker(QThread):
     log_message = pyqtSignal(str)
     completed = pyqtSignal(object)
 
-    def __init__(self, excel_path: Path) -> None:
+    def __init__(self, table_path: Path) -> None:
         super().__init__()
-        self.excel_path = excel_path
+        self.table_path = table_path
 
     def run(self) -> None:
-        result = process_excel(self.excel_path, log=self.log_message.emit)
+        result = process_excel(self.table_path, log=self.log_message.emit)
         self.completed.emit(result)
 
 
@@ -111,7 +109,6 @@ class MainWindow(QMainWindow):
         self.resize(720, 560)
         self.build_ui()
         self.apply_style()
-        self.load_default_excel()
 
     def build_ui(self) -> None:
         root = QWidget()
@@ -132,20 +129,20 @@ class MainWindow(QMainWindow):
         title.setObjectName("mainTitle")
         layout.addWidget(title)
 
-        subtitle = QLabel("根据 ASIN.xlsx 自动匹配店铺图片，并生成各国家站点所需文件。")
+        subtitle = QLabel("根据 xlsx/csv 表格自动匹配店铺图片，并生成各站点所需文件。")
         subtitle.setObjectName("subTitle")
         subtitle.setWordWrap(True)
         layout.addWidget(subtitle)
 
         file_row = QHBoxLayout()
         file_row.setSpacing(10)
-        self.excel_input = ExcelPathEdit()
-        self.excel_input.file_dropped.connect(self.set_excel_path)
-        file_row.addWidget(self.excel_input, 1)
+        self.table_input = TablePathEdit()
+        self.table_input.file_dropped.connect(self.set_table_path)
+        file_row.addWidget(self.table_input, 1)
 
-        browse_button = QPushButton("选择 ASIN.xlsx")
+        browse_button = QPushButton("选择表格")
         browse_button.setObjectName("btnSecondary")
-        browse_button.clicked.connect(self.choose_excel)
+        browse_button.clicked.connect(self.choose_table)
         file_row.addWidget(browse_button)
         layout.addLayout(file_row)
 
@@ -165,7 +162,7 @@ class MainWindow(QMainWindow):
 
         status_row = QHBoxLayout()
         status_row.setSpacing(12)
-        self.status_label = QLabel("请选择 ASIN.xlsx 文件")
+        self.status_label = QLabel("请选择 .xlsx 或 .csv 表格文件")
         self.status_label.setObjectName("statusLabel")
         status_row.addWidget(self.status_label, 1)
         layout.addLayout(status_row)
@@ -285,80 +282,86 @@ class MainWindow(QMainWindow):
             """
         )
 
-    def load_default_excel(self) -> None:
-        default_excel = application_dir() / DEFAULT_DATA_FOLDER / "ASIN.xlsx"
-        if default_excel.is_file():
-            self.set_excel_path(str(default_excel))
-            self.set_status("已自动选择默认 Excel")
+    def set_table_path(self, path_text: str) -> None:
+        self.table_input.setText(path_text)
+        self.set_status("已选择表格")
 
-    def set_excel_path(self, path_text: str) -> None:
-        self.excel_input.setText(path_text)
-        self.set_status("已选择 Excel")
-
-    def choose_excel(self) -> None:
-        initial_dir = application_dir() / DEFAULT_DATA_FOLDER
-        if not initial_dir.exists():
-            initial_dir = application_dir()
+    def choose_table(self) -> None:
         selected, _filter = QFileDialog.getOpenFileName(
             self,
-            "选择 ASIN.xlsx",
-            str(initial_dir),
-            "Excel 工作簿 (*.xlsx);;所有文件 (*)",
+            "选择表格文件",
+            str(application_dir()),
+            "表格文件 (*.xlsx *.csv);;Excel 工作簿 (*.xlsx);;CSV 文件 (*.csv);;所有文件 (*)",
         )
         if selected:
-            self.set_excel_path(selected)
+            self.set_table_path(selected)
 
     def start_generation(self) -> None:
-        excel_path = self.selected_excel_path()
-        if excel_path is None:
+        table_path = self.selected_table_path()
+        if table_path is None:
             return
 
         self.log_output.clear()
-        self.last_open_dir = excel_path.parent
+        self.last_open_dir = table_path.parent
         self.open_button.setEnabled(False)
         self.generate_button.setEnabled(False)
         self.generate_button.setText("正在生成中...")
-        self.set_status("正在检查文件...")
+        self.set_status("正在检查表格...")
         self.progress_bar.setRange(0, 0)
 
-        if not self.ensure_required_images(excel_path):
+        if not self.ensure_required_images(table_path):
             self.finish_cancelled()
             return
 
         self.append_log("开始生成图片...", "info")
         self.set_status("正在生成图片...")
 
-        self.worker = ProcessWorker(excel_path)
+        self.worker = ProcessWorker(table_path)
         self.worker.log_message.connect(self.append_process_log)
         self.worker.completed.connect(self.finish_generation)
         self.worker.start()
 
-    def selected_excel_path(self) -> Path | None:
-        path_text = self.excel_input.text().strip()
+    def selected_table_path(self) -> Path | None:
+        path_text = self.table_input.text().strip()
         if not path_text:
-            QMessageBox.warning(self, "缺少 Excel", "请先选择 ASIN.xlsx 文件。")
+            QMessageBox.warning(self, "缺少表格", "请先选择 .xlsx 或 .csv 表格文件。")
             return None
 
-        excel_path = Path(path_text)
-        if not excel_path.is_file():
-            QMessageBox.critical(self, "未找到文件", f"未找到所选 Excel:\n{excel_path}")
+        table_path = Path(path_text)
+        if not table_path.is_file():
+            QMessageBox.critical(self, "未找到文件", f"未找到所选表格:\n{table_path}")
             return None
 
-        if excel_path.name.lower() != "asin.xlsx":
-            QMessageBox.critical(self, "Excel 文件不正确", "请选择名为 ASIN.xlsx 的文件。")
+        if table_path.suffix.lower() not in SUPPORTED_TABLE_SUFFIXES:
+            self.show_table_error("请选择 .xlsx 或 .csv 表格文件。")
             return None
 
-        return excel_path
+        return table_path
 
-    def ensure_required_images(self, excel_path: Path) -> bool:
+    def show_table_error(self, error: str) -> None:
+        template_path = create_template(application_dir())
+        QMessageBox.critical(
+            self,
+            "表格格式不符合要求",
+            (
+                f"{error}\n\n"
+                "已在程序根目录生成模板：\n"
+                f"{template_path}\n\n"
+                "模板要求：sheet 名为“店铺-站点”，第一列填写 ASIN：B012345678。"
+            ),
+        )
+        self.append_log(f"表格检查失败: {error}", "error")
+        self.append_log(f"已生成模板: {template_path}", "warn")
+
+    def ensure_required_images(self, table_path: Path) -> bool:
         try:
-            shops = get_required_shops(excel_path)
+            shops = get_required_shops(table_path)
         except Exception as exc:
-            QMessageBox.critical(self, "Excel 检查失败", str(exc))
+            self.show_table_error(str(exc))
             return False
 
         for shop in shops:
-            expected_image = excel_path.parent / f"{shop}.jpg"
+            expected_image = table_path.parent / f"{shop}.jpg"
             if is_valid_jpeg(expected_image):
                 self.append_log(f"店铺图片已就绪: {expected_image.name}", "success")
                 continue
