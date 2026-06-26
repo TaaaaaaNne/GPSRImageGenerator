@@ -46,6 +46,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
+          cache-dependency-path: requirements-build.txt
 
       - name: Install build dependencies
         run: |
