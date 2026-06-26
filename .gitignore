@@ -14,7 +14,7 @@ NEXT_AGENT_HANDOFF.md
 tools/upx/
 tools/upx-*.zip
 
-GPSR图片生成器/*-*/
+GPSR图片生成器/
 
 .DS_Store
 Thumbs.db
