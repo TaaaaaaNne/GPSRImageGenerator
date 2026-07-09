@@ -58,15 +58,12 @@ jobs:
           ls -lh release-files
 
       - name: Create or update release
-        shell: bash
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          body: GPSRImageGenerator static web tool for Windows and macOS.
+          files: release-files/*.zip
+          fail_on_unmatched_files: true
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          tag="${GITHUB_REF_NAME}"
-          if gh release view "$tag" >/dev/null 2>&1; then
-            gh release upload "$tag" release-files/*.zip --clobber
-          else
-            gh release create "$tag" release-files/*.zip \
-              --title "$tag" \
-              --notes "GPSRImageGenerator static web tool for Windows and macOS."
-          fi
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
