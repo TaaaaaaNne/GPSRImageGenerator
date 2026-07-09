@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GPSR 图片生成器</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="vendor/xlsx.full.min.js" defer></script>
+  <script src="resource/images/manifest.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Local Web Tool</p>
+        <h1>GPSR 图片生成器</h1>
+      </div>
+      <div class="topbar-actions">
+        <a class="ghost-button link-button" href="#guidePanel">说明</a>
+        <button class="ghost-button" id="downloadTemplateButton" type="button">下载模板</button>
+        <button class="ghost-button" id="resetButton" type="button">清空</button>
+      </div>
+    </header>
+
+    <details class="guide-panel" id="guidePanel">
+      <summary>使用说明和最佳方式</summary>
+      <div class="guide-grid">
+        <div>
+          <h2>推荐流程</h2>
+          <ol>
+            <li>在页面里填写店铺、站点和 ASIN，或导入原来的 .xlsx / .csv。</li>
+            <li>常用店铺 JPG 可以放进内置素材库，网页打开后会自动加载。</li>
+            <li>临时图片也可以一次选择整个素材文件夹。</li>
+            <li>第一次点击“保存到文件夹”时会从下载目录开始选择；请在下载里新建或选择一个普通子文件夹，例如 GPSR输出。</li>
+          </ol>
+        </div>
+        <div>
+          <h2>浏览器限制</h2>
+          <p>浏览器不能无授权写入网页所在根目录，也不能预填任意本机路径或打开系统文件管理器。Chrome / Edge 通常不允许直接选择“下载”根目录本身；请选择下载目录里的普通子文件夹。如果权限被系统收回，页面会让你重新选择。</p>
+        </div>
+      </div>
+    </details>
+
+    <section class="workspace" aria-label="GPSR 图片生成器作业台">
+      <aside class="control-panel" aria-label="导入文件">
+        <div class="drop-zone" id="tableDropZone">
+          <div class="drop-zone-header">
+            <span class="step-index">01</span>
+            <strong>表格文件</strong>
+          </div>
+          <p id="tableFileName">拖入或选择 .xlsx / .csv，也可以下方直接填表</p>
+          <label class="file-button" for="tableInput">选择表格</label>
+          <input id="tableInput" type="file" accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+        </div>
+
+        <div class="manual-card">
+          <div class="drop-zone-header">
+            <span class="step-index">02</span>
+            <strong>网页填表</strong>
+          </div>
+          <div class="field-grid">
+            <label>
+              店铺
+              <input id="manualShop" type="text" autocomplete="off" placeholder="例如 吕国强">
+            </label>
+            <label>
+              站点
+              <input id="manualSite" type="text" autocomplete="off" placeholder="例如 ES">
+            </label>
+          </div>
+          <label class="textarea-label">
+            ASIN
+            <textarea id="manualAsins" rows="7" placeholder="每行一个，例如&#10;ASIN：B012345678&#10;B0ABCDEF12"></textarea>
+          </label>
+          <button class="file-button compact-button" id="addManualSheetButton" type="button">加入 / 更新清单</button>
+        </div>
+
+        <div class="drop-zone" id="imageDropZone">
+          <div class="drop-zone-header">
+            <span class="step-index">03</span>
+            <strong>店铺图片</strong>
+          </div>
+          <p id="imageFileName">拖入或选择 JPG/JPEG，可多选</p>
+          <label class="file-button" for="imageInput">选择图片</label>
+          <input id="imageInput" type="file" accept="image/jpeg,.jpg,.jpeg" multiple>
+        </div>
+
+        <div class="resource-card">
+          <div class="drop-zone-header">
+            <span class="step-index">04</span>
+            <strong>素材文件夹</strong>
+          </div>
+          <p id="resourceFolderName">默认加载内置 resource/images，也可选择任意店铺图片文件夹</p>
+          <label class="file-button" for="resourceDirectoryInput">选择素材文件夹</label>
+          <input id="resourceDirectoryInput" type="file" accept="image/jpeg,.jpg,.jpeg" multiple webkitdirectory directory>
+        </div>
+
+        <div class="output-actions">
+          <button class="primary-button" id="saveFolderButton" type="button" disabled>保存到文件夹</button>
+          <button class="ghost-button full-button" id="changeOutputFolderButton" type="button">设置保存位置</button>
+          <button class="ghost-button full-button" id="generateZipButton" type="button" disabled>下载 ZIP 备用</button>
+          <p id="saveModeHint">支持的浏览器可直接写入文件夹。</p>
+        </div>
+      </aside>
+
+      <section class="review-panel" aria-label="校验和生成">
+        <div class="status-strip" id="statusStrip">
+          <div>
+            <span>表格</span>
+            <strong id="sheetCount">0</strong>
+          </div>
+          <div>
+            <span>店铺</span>
+            <strong id="shopCount">0</strong>
+          </div>
+          <div>
+            <span>图片</span>
+            <strong id="imageCount">0</strong>
+          </div>
+          <div>
+            <span>输出</span>
+            <strong id="outputCount">0</strong>
+          </div>
+        </div>
+
+        <div class="split-area">
+          <div class="table-box">
+            <div class="section-heading">
+              <h2>处理清单</h2>
+              <span id="readinessBadge">等待导入</span>
+            </div>
+            <div class="sheet-list" id="sheetList">
+              <p class="empty-state">导入表格后，这里会显示每个站点的 ASIN 数量。</p>
+            </div>
+          </div>
+
+          <div class="table-box">
+            <div class="section-heading">
+              <h2>图片匹配</h2>
+              <span id="matchBadge">0 / 0</span>
+            </div>
+            <div class="shop-list" id="shopList">
+              <p class="empty-state">店铺图片文件名最好与店铺名一致，例如 店铺.jpg。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="log-panel" aria-live="polite">
+          <div class="section-heading">
+            <h2>运行记录</h2>
+            <span id="logBadge">Ready</span>
+          </div>
+          <pre id="logOutput">等待导入文件。</pre>
+        </div>
+      </section>
+    </section>
+  </main>
+</body>
+</html>
