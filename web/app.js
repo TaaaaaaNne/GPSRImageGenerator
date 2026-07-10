@@ -7,6 +7,7 @@
   const SETTINGS_STORE_NAME = "settings";
   const OUTPUT_DIRECTORY_KEY = "outputDirectory";
   const DEFAULT_OUTPUT_START_IN = "downloads";
+  const DESKTOP_OUTPUT_DIRECTORY_KEY = "gpsrDesktopOutputDirectory";
   const state = {
     tableFile: null,
     tableLabel: "",
@@ -14,8 +15,10 @@
     images: [],
     imageByKey: new Map(),
     shopImages: new Map(),
+    desktopReady: false,
     outputDirectoryHandle: null,
     outputDirectoryName: "",
+    outputDirectoryPath: "",
     busy: false,
     logs: ["等待导入文件。"],
   };
@@ -31,6 +34,7 @@
     resourceFolderName: document.getElementById("resourceFolderName"),
     saveFolderButton: document.getElementById("saveFolderButton"),
     changeOutputFolderButton: document.getElementById("changeOutputFolderButton"),
+    openOutputFolderButton: document.getElementById("openOutputFolderButton"),
     generateZipButton: document.getElementById("generateZipButton"),
     saveModeHint: document.getElementById("saveModeHint"),
     resetButton: document.getElementById("resetButton"),
@@ -447,17 +451,27 @@
     els.saveFolderButton.disabled = !ready || state.busy || !canSaveToFolder();
     els.saveFolderButton.textContent = state.busy
       ? "正在生成..."
-      : state.outputDirectoryHandle
-        ? "保存到已记住文件夹"
+      : isDesktopApp()
+        ? "保存到输出文件夹"
+        : state.outputDirectoryHandle
+        ? `保存到「${state.outputDirectoryName || "上次文件夹"}」`
         : "保存到文件夹";
     els.changeOutputFolderButton.disabled = state.busy || !canSaveToFolder();
-    els.changeOutputFolderButton.textContent = state.outputDirectoryHandle ? "更换保存位置" : "设置保存位置";
+    els.changeOutputFolderButton.textContent = isDesktopApp()
+      ? "更换输出文件夹"
+      : state.outputDirectoryHandle
+        ? "更换保存位置"
+        : "设置保存位置";
+    els.openOutputFolderButton.hidden = !isDesktopApp();
+    els.openOutputFolderButton.disabled = state.busy || !state.outputDirectoryPath;
     els.generateZipButton.disabled = !ready || state.busy;
     els.generateZipButton.textContent = state.busy ? "正在生成..." : "下载 ZIP 备用";
-    els.saveModeHint.textContent = canSaveToFolder()
+    els.saveModeHint.textContent = isDesktopApp()
+      ? `输出路径：${state.outputDirectoryPath || "正在读取默认输出路径..."}`
+      : canSaveToFolder()
       ? state.outputDirectoryHandle
-        ? `保存位置：${state.outputDirectoryName || "已记住的文件夹"}。点击保存会直接写入；浏览器要求时会再次确认。`
-        : "第一次保存会选择输出文件夹，之后同一浏览器会尽量记住。"
+        ? `已记住系统弹窗里选过的文件夹「${state.outputDirectoryName || "上次文件夹"}」。浏览器不会提供完整路径；找不到时请点“更换保存位置”。`
+        : "第一次保存会选择输出文件夹。建议在下载目录里新建并选择“GPSR输出”。"
       : "当前浏览器不支持直接保存文件夹，可使用 ZIP 备用。";
     renderSheets();
     renderShops();
@@ -489,7 +503,43 @@
   }
 
   function canSaveToFolder() {
-    return typeof window.showDirectoryPicker === "function";
+    return isDesktopApp() || typeof window.showDirectoryPicker === "function";
+  }
+
+  function isDesktopApp() {
+    return Boolean(window.GPSRDesktop && window.GPSRDesktop.isDesktop);
+  }
+
+  function getStoredDesktopOutputDirectory() {
+    try {
+      return window.localStorage.getItem(DESKTOP_OUTPUT_DIRECTORY_KEY) || "";
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function setDesktopOutputDirectory(directoryPath) {
+    state.outputDirectoryPath = directoryPath || "";
+    try {
+      if (directoryPath) {
+        window.localStorage.setItem(DESKTOP_OUTPUT_DIRECTORY_KEY, directoryPath);
+      }
+    } catch (error) {
+      // The path still works for this session; only remembering it failed.
+    }
+    updateView();
+  }
+
+  async function initializeDesktopBridge() {
+    if (!isDesktopApp()) return;
+    state.desktopReady = true;
+    try {
+      const info = await window.GPSRDesktop.getInfo();
+      setDesktopOutputDirectory(getStoredDesktopOutputDirectory() || info.defaultOutputDirectory || "");
+      addLog(`桌面版已启用，默认输出路径：${state.outputDirectoryPath}`);
+    } catch (error) {
+      addLog(error.message || String(error), "error");
+    }
   }
 
   function canStoreDirectoryHandle() {
@@ -542,6 +592,7 @@
   }
 
   async function restoreSavedOutputFolder() {
+    if (isDesktopApp()) return;
     if (!canSaveToFolder() || !canStoreDirectoryHandle()) return;
     try {
       const handle = await getStoredSetting(OUTPUT_DIRECTORY_KEY);
@@ -690,6 +741,17 @@
     return entries;
   }
 
+  function toTransferableEntry(entry) {
+    const data = entry.data;
+    const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+    return {
+      folder: entry.folder,
+      fileName: entry.fileName,
+      name: entry.name,
+      data: buffer,
+    };
+  }
+
   function setExportBusy(isBusy) {
     state.busy = isBusy;
     updateView();
@@ -703,10 +765,23 @@
     }
     setExportBusy(true);
     try {
+      if (isDesktopApp()) {
+        const entries = (await buildOutputEntries()).map(toTransferableEntry);
+        const result = await window.GPSRDesktop.saveEntries({
+          outputDirectory: state.outputDirectoryPath,
+          entries,
+        });
+        setDesktopOutputDirectory(result.outputDirectory);
+        addLog(`已保存 ${result.count} 张图片到 ${result.outputDirectory}。`, "success");
+        addLog("可点击“打开输出文件夹”直接查看结果。");
+        return;
+      }
       const rootHandle = await getWritableOutputFolder();
       const entries = await buildOutputEntries();
       await writeEntriesToFolder(rootHandle, entries);
-      addLog(`已直接保存 ${entries.length} 张图片到 ${rootHandle.name || "目标文件夹"}。`, "success");
+      const folderName = rootHandle.name || "你选择的文件夹";
+      addLog(`已保存 ${entries.length} 张图片到系统弹窗里选择的文件夹「${folderName}」。`, "success");
+      addLog("浏览器不会告诉网页完整路径；如果找不到，请点“更换保存位置”，重新选择一个好认的子文件夹，例如 下载/GPSR输出。");
     } catch (error) {
       if (error && error.name === "AbortError") {
         addLog("已取消选择输出文件夹。");
@@ -726,14 +801,36 @@
       return;
     }
     try {
+      if (isDesktopApp()) {
+        const directoryPath = await window.GPSRDesktop.selectOutputDirectory(state.outputDirectoryPath);
+        if (!directoryPath) {
+          addLog("已取消设置输出文件夹。");
+          return;
+        }
+        setDesktopOutputDirectory(directoryPath);
+        addLog(`已设置输出文件夹：${directoryPath}`, "success");
+        return;
+      }
       const handle = await chooseOutputFolder({ startFromRemembered: false });
-      addLog(`已设置保存位置：${handle.name || "已选择的文件夹"}。`, "success");
+      addLog(`已设置保存位置：系统弹窗里选择的文件夹「${handle.name || "已选择的文件夹"}」。`, "success");
+      addLog("浏览器不会告诉网页完整路径，请记住刚才在系统弹窗里选的是哪个位置。");
     } catch (error) {
       if (error && error.name === "AbortError") {
         addLog("已取消设置保存位置。");
       } else {
         addLog(error.message || String(error), "error");
       }
+    }
+  }
+
+  async function openOutputFolder() {
+    if (!isDesktopApp()) return;
+    try {
+      const directoryPath = await window.GPSRDesktop.openOutputDirectory(state.outputDirectoryPath);
+      setDesktopOutputDirectory(directoryPath);
+      addLog(`已打开输出文件夹：${directoryPath}`, "success");
+    } catch (error) {
+      addLog(error.message || String(error), "error");
     }
   }
 
@@ -927,6 +1024,7 @@
     els.addManualSheetButton.addEventListener("click", addManualSheet);
     els.saveFolderButton.addEventListener("click", saveToFolder);
     els.changeOutputFolderButton.addEventListener("click", changeOutputFolder);
+    els.openOutputFolderButton.addEventListener("click", openOutputFolder);
     els.generateZipButton.addEventListener("click", generateZip);
     els.resetButton.addEventListener("click", resetAll);
     els.downloadTemplateButton.addEventListener("click", downloadTemplate);
@@ -936,6 +1034,7 @@
 
   bindEvents();
   updateView();
+  initializeDesktopBridge();
   restoreSavedOutputFolder();
   loadBundledImages();
   document.documentElement.dataset.gpsrReady = "true";
