@@ -1,4 +1,4 @@
-name: Build desktop apps
+name: Package web tool
 
 on:
   workflow_dispatch:
@@ -16,51 +16,33 @@ env:
   APP_NAME: GPSRImageGenerator
 
 jobs:
-  build:
-    name: Build ${{ matrix.name }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: Windows x64
-            os: windows-latest
-            build_args: --win portable --x64
-          - name: macOS x64 and arm64
-            os: macos-latest
-            build_args: --mac zip --x64 --arm64
+  package:
+    name: Package GPSRImageGenerator-web
+    runs-on: ubuntu-latest
 
     steps:
       - name: Check out source
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build desktop package
-        run: npm run dist -- ${{ matrix.build_args }}
-        env:
-          CSC_IDENTITY_AUTO_DISCOVERY: false
+      - name: Package static web files
+        shell: bash
+        run: |
+          python tools/build_web_resource_manifest.py
+          mkdir -p "package/${APP_NAME}-web"
+          cp -R web/. "package/${APP_NAME}-web/"
+          (cd package && zip -r "../${APP_NAME}-web.zip" "${APP_NAME}-web")
 
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
-          name: GPSRImageGenerator-${{ matrix.name }}
-          path: |
-            release/*.exe
-            release/*.zip
+          name: GPSRImageGenerator-web
+          path: GPSRImageGenerator-web.zip
           retention-days: 14
 
   release:
     name: Attach packages to GitHub Release
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: build
+    needs: package
     runs-on: ubuntu-latest
     steps:
       - name: Download build artifacts
@@ -80,10 +62,8 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
-          body: GPSRImageGenerator Electron desktop app for Windows and macOS.
-          files: |
-            release-files/*.exe
-            release-files/*.zip
+          body: GPSRImageGenerator static web tool for Windows and macOS.
+          files: release-files/*.zip
           fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

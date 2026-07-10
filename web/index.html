@@ -13,7 +13,7 @@
   <main class="app-shell">
     <header class="topbar">
       <div>
-        <p class="eyebrow">Desktop Tool</p>
+        <p class="eyebrow">Local Web Tool</p>
         <h1>GPSR 图片生成器</h1>
       </div>
       <div class="topbar-actions">
@@ -32,13 +32,12 @@
             <li>在页面里填写店铺、站点和 ASIN，或导入原来的 .xlsx / .csv。</li>
             <li>常用店铺 JPG 可以放进内置素材库，网页打开后会自动加载。</li>
             <li>临时图片也可以一次选择整个素材文件夹。</li>
-            <li>桌面版默认保存到系统下载目录里的 GPSR输出 文件夹。</li>
-            <li>保存完成后可以直接打开输出文件夹。</li>
+            <li>第一次点击“保存到文件夹”时会从下载目录开始选择；请在下载里新建或选择一个普通子文件夹，例如 GPSR输出。</li>
           </ol>
         </div>
         <div>
-          <h2>桌面版说明</h2>
-          <p>Windows / macOS 桌面版会显示完整输出路径，并能直接打开输出文件夹。如果用普通浏览器打开 index.html，仍会保留 ZIP 下载和浏览器文件夹保存备用。</p>
+          <h2>浏览器限制</h2>
+          <p>浏览器不能无授权写入网页所在根目录，也不能预填任意本机路径或打开系统文件管理器。Chrome / Edge 通常不允许直接选择“下载”根目录本身；请选择下载目录里的普通子文件夹。如果权限被系统收回，页面会让你重新选择。</p>
         </div>
       </div>
     </details>
@@ -100,7 +99,6 @@
         <div class="output-actions">
           <button class="primary-button" id="saveFolderButton" type="button" disabled>保存到文件夹</button>
           <button class="ghost-button full-button" id="changeOutputFolderButton" type="button">设置保存位置</button>
-          <button class="ghost-button full-button" id="openOutputFolderButton" type="button" hidden>打开输出文件夹</button>
           <button class="ghost-button full-button" id="generateZipButton" type="button" disabled>下载 ZIP 备用</button>
           <p id="saveModeHint">支持的浏览器可直接写入文件夹。</p>
         </div>
