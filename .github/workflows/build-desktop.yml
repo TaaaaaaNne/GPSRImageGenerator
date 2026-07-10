@@ -24,10 +24,24 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install web test dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run web smoke test
+        run: npm run smoke:web
+
       - name: Package static web files
         shell: bash
         run: |
-          python tools/build_web_resource_manifest.py
           mkdir -p "package/${APP_NAME}-web"
           cp -R web/. "package/${APP_NAME}-web/"
           (cd package && zip -r "../${APP_NAME}-web.zip" "${APP_NAME}-web")

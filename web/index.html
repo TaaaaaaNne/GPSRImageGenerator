@@ -6,7 +6,6 @@
   <title>GPSR 图片生成器</title>
   <link rel="stylesheet" href="styles.css">
   <script src="vendor/xlsx.full.min.js" defer></script>
-  <script src="resource/images/manifest.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -19,6 +18,7 @@
       <div class="topbar-actions">
         <a class="ghost-button link-button" href="#guidePanel">说明</a>
         <button class="ghost-button" id="downloadTemplateButton" type="button">下载模板</button>
+        <button class="ghost-button" id="exportSheetButton" type="button" disabled>导出清单 CSV</button>
         <button class="ghost-button" id="resetButton" type="button">清空</button>
       </div>
     </header>
@@ -30,14 +30,15 @@
           <h2>推荐流程</h2>
           <ol>
             <li>在页面里填写店铺、站点和 ASIN，或导入原来的 .xlsx / .csv。</li>
-            <li>常用店铺 JPG 可以放进内置素材库，网页打开后会自动加载。</li>
-            <li>临时图片也可以一次选择整个素材文件夹。</li>
-            <li>第一次点击“保存到文件夹”时会从下载目录开始选择；请在下载里新建或选择一个普通子文件夹，例如 GPSR输出。</li>
+            <li>批量录入建议整理成“店铺、站点、ASIN”三列 CSV，然后用上方表格文件导入。</li>
+            <li>当前清单会自动保存在本机浏览器里，刷新页面后可继续；也可以导出 CSV 备份。</li>
+            <li>店铺 JPG 由业务员每次从“店铺图片”入口手动选择，可一次多选。</li>
+            <li>Chrome / Edge 优先点“保存到文件夹”；不支持直接保存时再用“下载 ZIP（备用）”。生成结果会统一放进一个按日期时间命名的批次文件夹。</li>
           </ol>
         </div>
         <div>
           <h2>浏览器限制</h2>
-          <p>浏览器不能无授权写入网页所在根目录，也不能预填任意本机路径或打开系统文件管理器。Chrome / Edge 通常不允许直接选择“下载”根目录本身；请选择下载目录里的普通子文件夹。如果权限被系统收回，页面会让你重新选择。</p>
+          <p>浏览器不能无授权写入网页所在根目录，也不能预填任意本机路径或打开系统文件管理器。Chrome / Edge 可以直接保存到用户选择的普通子文件夹；Safari / Firefox 使用 ZIP 备用。</p>
         </div>
       </div>
     </details>
@@ -86,22 +87,6 @@
           <input id="imageInput" type="file" accept="image/jpeg,.jpg,.jpeg" multiple>
         </div>
 
-        <div class="resource-card">
-          <div class="drop-zone-header">
-            <span class="step-index">04</span>
-            <strong>素材文件夹</strong>
-          </div>
-          <p id="resourceFolderName">默认加载内置 resource/images，也可选择任意店铺图片文件夹</p>
-          <label class="file-button" for="resourceDirectoryInput">选择素材文件夹</label>
-          <input id="resourceDirectoryInput" type="file" accept="image/jpeg,.jpg,.jpeg" multiple webkitdirectory directory>
-        </div>
-
-        <div class="output-actions">
-          <button class="primary-button" id="saveFolderButton" type="button" disabled>保存到文件夹</button>
-          <button class="ghost-button full-button" id="changeOutputFolderButton" type="button">设置保存位置</button>
-          <button class="ghost-button full-button" id="generateZipButton" type="button" disabled>下载 ZIP 备用</button>
-          <p id="saveModeHint">支持的浏览器可直接写入文件夹。</p>
-        </div>
       </aside>
 
       <section class="review-panel" aria-label="校验和生成">
@@ -122,6 +107,24 @@
             <span>输出</span>
             <strong id="outputCount">0</strong>
           </div>
+        </div>
+
+        <div class="next-step-panel" id="nextStepPanel" aria-live="polite">
+          <strong id="nextStepTitle">下一步</strong>
+          <p id="nextStepText">导入表格或在左侧直接填写店铺、站点和 ASIN。</p>
+          <p class="next-step-detail" id="nextStepDetail" hidden></p>
+          <div class="next-step-actions">
+            <button class="mini-button copy-missing-button" id="copyMissingShopsButton" type="button" hidden>复制缺失店铺名</button>
+            <button class="mini-button copy-issue-button" id="copyIssueListButton" type="button" hidden>复制检查清单</button>
+          </div>
+        </div>
+
+        <div class="output-actions">
+          <button class="primary-button" id="saveFolderButton" type="button" disabled>保存到文件夹（优先）</button>
+          <button class="ghost-button full-button" id="generateZipButton" type="button" disabled>下载 ZIP（备用）</button>
+          <button class="ghost-button full-button" id="changeOutputFolderButton" type="button">设置保存位置</button>
+          <button class="ghost-button full-button subtle-button" id="clearOutputFolderButton" type="button" hidden>清除保存位置</button>
+          <p id="saveModeHint">Chrome / Edge 可直接写入文件夹；ZIP 作为备用。</p>
         </div>
 
         <div class="split-area">

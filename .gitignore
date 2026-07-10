@@ -18,3 +18,7 @@ GPSR图片生成器/
 
 .DS_Store
 Thumbs.db
+
+node_modules/
+playwright-report/
+test-results/

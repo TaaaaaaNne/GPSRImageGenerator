@@ -1,1 +1,0 @@
-window.GPSR_RESOURCE_IMAGES = [];

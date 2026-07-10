@@ -1,0 +1,11 @@
+{
+  "name": "gpsr-image-generator",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "smoke:web": "playwright test tests/web-smoke.spec.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1"
+  }
+}

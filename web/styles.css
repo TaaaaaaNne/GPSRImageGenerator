@@ -122,6 +122,15 @@ h2 {
   box-shadow: 4px 4px 0 var(--dark);
 }
 
+.ghost-button:disabled,
+.file-button:disabled {
+  border-color: var(--line-strong);
+  background: #e7eee9;
+  color: #81908a;
+  box-shadow: none;
+  transform: none;
+}
+
 .primary-button {
   width: 100%;
   min-height: 50px;
@@ -142,6 +151,11 @@ h2 {
 
 .full-button {
   width: 100%;
+}
+
+.subtle-button {
+  border-color: var(--line-strong);
+  color: var(--muted);
 }
 
 .guide-panel {
@@ -184,6 +198,7 @@ h2 {
   display: grid;
   grid-template-columns: 320px minmax(0, 1fr);
   gap: 18px;
+  align-items: start;
 }
 
 .control-panel,
@@ -197,22 +212,29 @@ h2 {
 .control-panel {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 14px;
+  gap: 12px;
+  padding: 12px;
   align-self: start;
 }
 
 .review-panel {
   padding: 16px;
   min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, .78fr);
+  grid-template-areas:
+    "status status"
+    "next actions"
+    "split split"
+    "log log";
+  gap: 14px;
 }
 
 .drop-zone,
-.manual-card,
-.resource-card {
+.manual-card {
   display: grid;
-  gap: 12px;
-  padding: 16px;
+  gap: 10px;
+  padding: 14px;
   border: 1px dashed var(--line-strong);
   border-radius: 7px;
   background: var(--panel-2);
@@ -220,7 +242,7 @@ h2 {
 }
 
 .drop-zone {
-  min-height: 178px;
+  min-height: 0;
 }
 
 .drop-zone.is-dragging {
@@ -232,15 +254,15 @@ h2 {
 .drop-zone-header {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   color: var(--dark);
 }
 
 .step-index {
   display: inline-grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   border: 1px solid var(--dark);
   border-radius: 50%;
   background: var(--panel);
@@ -250,7 +272,6 @@ h2 {
 }
 
 .drop-zone p,
-.resource-card p,
 .output-actions p {
   color: var(--muted);
   line-height: 1.45;
@@ -258,7 +279,6 @@ h2 {
 }
 
 .drop-zone > input,
-.resource-card > input,
 .shop-actions input {
   position: absolute;
   width: 1px;
@@ -279,9 +299,29 @@ h2 {
 }
 
 .manual-card textarea {
-  min-height: 134px;
+  height: 104px;
+  min-height: 92px;
   resize: vertical;
   line-height: 1.5;
+}
+
+.local-data-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.local-data-line p {
+  font-size: 12px;
+}
+
+.cache-clear-button {
+  width: fit-content;
+  color: var(--dark);
 }
 
 .manual-card label {
@@ -305,16 +345,30 @@ h2 {
   gap: 10px;
 }
 
+.review-panel .output-actions {
+  grid-area: actions;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fbfaf4;
+}
+
+.review-panel .output-actions p {
+  grid-column: 1 / -1;
+}
+
 .output-actions p {
   min-height: 18px;
   font-size: 12px;
 }
 
 .status-strip {
+  grid-area: status;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
-  margin-bottom: 14px;
 }
 
 .status-strip > div {
@@ -340,7 +394,58 @@ h2 {
   line-height: 1;
 }
 
+.next-step-panel {
+  grid-area: next;
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--accent-2);
+  border-radius: 7px;
+  background: #fff9e8;
+}
+
+.next-step-panel strong {
+  color: var(--dark);
+  font-size: 14px;
+}
+
+.next-step-panel p {
+  color: var(--muted);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.next-step-detail {
+  padding-top: 6px;
+  border-top: 1px solid rgba(24, 33, 37, .12);
+  font-size: 12px;
+}
+
+.next-step-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.copy-missing-button,
+.copy-issue-button {
+  color: var(--dark);
+}
+
+.next-step-panel.warn {
+  border-left-color: var(--warn);
+  background: #fff7dd;
+}
+
+.next-step-panel.ready {
+  border-left-color: var(--ok);
+  background: #edf8f1;
+}
+
 .split-area {
+  grid-area: split;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(280px, .9fr);
   gap: 14px;
@@ -355,7 +460,7 @@ h2 {
 }
 
 .table-box {
-  min-height: 300px;
+  min-height: 210px;
   overflow: hidden;
 }
 
@@ -364,8 +469,8 @@ h2 {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  min-height: 52px;
-  padding: 14px;
+  min-height: 46px;
+  padding: 12px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -373,14 +478,14 @@ h2 {
 .shop-list {
   display: grid;
   gap: 10px;
-  padding: 14px;
+  padding: 12px;
 }
 
 .sheet-row,
 .shop-row {
   display: grid;
   gap: 8px;
-  padding: 12px;
+  padding: 10px;
   border: 1px solid var(--line);
   border-radius: 6px;
   background: #fffef9;
@@ -458,13 +563,13 @@ h2 {
 }
 
 .log-panel {
-  margin-top: 14px;
+  grid-area: log;
   overflow: hidden;
 }
 
 #logOutput {
-  min-height: 162px;
-  max-height: 260px;
+  min-height: 112px;
+  max-height: 190px;
   overflow: auto;
   margin: 0;
   padding: 14px;
@@ -480,14 +585,247 @@ h2 {
   color: var(--ok) !important;
 }
 
+.warn-text {
+  color: var(--warn) !important;
+}
+
 .has-error {
   color: var(--bad) !important;
+}
+
+@media (min-width: 901px) {
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    overflow: hidden;
+  }
+
+  .app-shell {
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    gap: 12px;
+    height: 100vh;
+    padding: 14px 0 16px;
+  }
+
+  .topbar {
+    align-items: center;
+    margin-bottom: 0;
+    padding: 8px 0 12px;
+  }
+
+  h1 {
+    font-size: clamp(30px, 4.1vw, 44px);
+  }
+
+  .topbar-actions {
+    gap: 8px;
+  }
+
+  .topbar-actions .ghost-button {
+    min-height: 38px;
+    padding: 8px 12px;
+  }
+
+  .guide-panel {
+    margin: 0;
+  }
+
+  .guide-panel summary {
+    min-height: 40px;
+    padding: 10px 14px;
+    border-bottom: 0;
+  }
+
+  .guide-panel[open] {
+    max-height: min(280px, 38vh);
+    overflow: auto;
+  }
+
+  .guide-panel[open] summary {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .workspace {
+    grid-template-columns: 390px minmax(0, 1fr);
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .control-panel,
+  .review-panel {
+    min-height: 0;
+    max-height: 100%;
+    overflow: auto;
+  }
+
+  .control-panel {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  #tableDropZone {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  #imageDropZone {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .manual-card {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .drop-zone,
+  .manual-card {
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .drop-zone-header {
+    gap: 8px;
+  }
+
+  .step-index {
+    width: 26px;
+    height: 26px;
+    font-size: 11px;
+  }
+
+  .drop-zone p,
+  .output-actions p {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .ghost-button,
+  .primary-button,
+  .file-button {
+    min-height: 36px;
+    padding: 8px 10px;
+  }
+
+  .manual-card input,
+  .manual-card textarea {
+    margin-top: 5px;
+    padding: 8px 9px;
+  }
+
+  .manual-card textarea {
+    height: 76px;
+    min-height: 72px;
+  }
+
+  .local-data-line {
+    padding-top: 6px;
+  }
+
+  .review-panel {
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    gap: 10px;
+    overflow: hidden;
+    padding: 12px;
+  }
+
+  .status-strip {
+    gap: 8px;
+  }
+
+  .status-strip > div {
+    min-height: 58px;
+    padding: 9px 10px;
+  }
+
+  .status-strip strong {
+    margin-top: 2px;
+    font-size: 22px;
+  }
+
+  .next-step-panel,
+  .review-panel .output-actions {
+    padding: 10px;
+  }
+
+  .review-panel .output-actions {
+    gap: 8px;
+  }
+
+  .split-area {
+    min-height: 0;
+    gap: 10px;
+  }
+
+  .table-box,
+  .log-panel {
+    min-height: 0;
+  }
+
+  .table-box {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .section-heading {
+    min-height: 40px;
+    padding: 10px;
+  }
+
+  .sheet-list,
+  .shop-list {
+    min-height: 0;
+    overflow: auto;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .sheet-row,
+  .shop-row {
+    gap: 6px;
+    padding: 9px;
+  }
+
+  .inline-file {
+    min-height: 32px;
+    padding: 6px 9px;
+  }
+
+  #logOutput {
+    min-height: 70px;
+    max-height: 70px;
+    padding: 10px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .review-panel {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "status"
+      "next"
+      "actions"
+      "split"
+      "log";
+  }
 }
 
 @media (max-width: 900px) {
   .workspace,
   .split-area {
     grid-template-columns: 1fr;
+  }
+
+  .review-panel .output-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .control-panel {
@@ -515,6 +853,10 @@ h2 {
 
   .status-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .review-panel .output-actions {
+    grid-template-columns: 1fr;
   }
 
   .ghost-button {
