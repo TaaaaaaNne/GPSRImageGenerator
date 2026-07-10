@@ -448,7 +448,7 @@
     els.saveFolderButton.textContent = state.busy
       ? "正在生成..."
       : state.outputDirectoryHandle
-        ? "保存到已记住文件夹"
+        ? `保存到「${state.outputDirectoryName || "上次文件夹"}」`
         : "保存到文件夹";
     els.changeOutputFolderButton.disabled = state.busy || !canSaveToFolder();
     els.changeOutputFolderButton.textContent = state.outputDirectoryHandle ? "更换保存位置" : "设置保存位置";
@@ -456,8 +456,8 @@
     els.generateZipButton.textContent = state.busy ? "正在生成..." : "下载 ZIP 备用";
     els.saveModeHint.textContent = canSaveToFolder()
       ? state.outputDirectoryHandle
-        ? `保存位置：${state.outputDirectoryName || "已记住的文件夹"}。点击保存会直接写入；浏览器要求时会再次确认。`
-        : "第一次保存会选择输出文件夹，之后同一浏览器会尽量记住。"
+        ? `已记住系统弹窗里选过的文件夹「${state.outputDirectoryName || "上次文件夹"}」。浏览器不会提供完整路径；找不到时请点“更换保存位置”。`
+        : "第一次保存会选择输出文件夹。建议在下载目录里新建并选择“GPSR输出”。"
       : "当前浏览器不支持直接保存文件夹，可使用 ZIP 备用。";
     renderSheets();
     renderShops();
@@ -706,7 +706,9 @@
       const rootHandle = await getWritableOutputFolder();
       const entries = await buildOutputEntries();
       await writeEntriesToFolder(rootHandle, entries);
-      addLog(`已直接保存 ${entries.length} 张图片到 ${rootHandle.name || "目标文件夹"}。`, "success");
+      const folderName = rootHandle.name || "你选择的文件夹";
+      addLog(`已保存 ${entries.length} 张图片到系统弹窗里选择的文件夹「${folderName}」。`, "success");
+      addLog("浏览器不会告诉网页完整路径；如果找不到，请点“更换保存位置”，重新选择一个好认的子文件夹，例如 下载/GPSR输出。");
     } catch (error) {
       if (error && error.name === "AbortError") {
         addLog("已取消选择输出文件夹。");
@@ -727,7 +729,8 @@
     }
     try {
       const handle = await chooseOutputFolder({ startFromRemembered: false });
-      addLog(`已设置保存位置：${handle.name || "已选择的文件夹"}。`, "success");
+      addLog(`已设置保存位置：系统弹窗里选择的文件夹「${handle.name || "已选择的文件夹"}」。`, "success");
+      addLog("浏览器不会告诉网页完整路径，请记住刚才在系统弹窗里选的是哪个位置。");
     } catch (error) {
       if (error && error.name === "AbortError") {
         addLog("已取消设置保存位置。");

@@ -109,6 +109,8 @@ h2 {
   color: var(--dark);
   background: var(--panel);
   font-weight: 800;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
   text-decoration: none;
   text-align: center;
   transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease;
